@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    # Reuses garage-api's existing local Postgres instance — new schema ("social"), not a new DB.
+    url: jdbc:postgresql://localhost:5432/garage_dev_2
+    username: postgres
+    password: garage123
+
+app:
+  jwt:
+    secret: "dev-only-not-a-real-secret-base64-encoded-0000000000"
+  encryption:
+    key: "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU=" # dev-only 32-byte key, base64
+  storage:
+    minio:
+      endpoint: http://localhost:9000
+      public-endpoint: http://localhost:9000
+      access-key: minioadmin
+      secret-key: minioadmin
+      bucket: social-publisher
+  meta:
+    app-id: ""
+    app-secret: ""
+    graph-api-version: v21.0
+  video-gen:
+    provider: replicate
+    api-key: ""
+    model: ""

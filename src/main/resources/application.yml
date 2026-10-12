@@ -1,0 +1,40 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: social-publisher
+  profiles:
+    default: dev
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: socialpublisherpool
+      minimum-idle: 2
+      maximum-pool-size: 10
+  jpa:
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: social
+    hibernate:
+      ddl-auto: none
+  flyway:
+    schemas: social
+    default-schema: social
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  jwt:
+    # Access-token TTL for the OAuth2 client-credentials grant this service issues.
+    expiration-ms: 900000
