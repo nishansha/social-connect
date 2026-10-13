@@ -35,6 +35,9 @@ public class SocialPost extends BaseEntity {
     @Column(name = "social_client_id", nullable = false)
     private Long socialClientId;
 
+    @Column(name = "account_ref", nullable = false, length = 200)
+    private String accountRef;
+
     @Column(name = "inventory_ref", nullable = false, length = 200)
     private String inventoryRef;
 

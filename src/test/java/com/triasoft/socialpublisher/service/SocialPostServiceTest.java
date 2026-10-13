@@ -82,6 +82,7 @@ class SocialPostServiceTest {
 
     private SocialPostSubmitRq photoRequest() {
         SocialPostSubmitRq rq = new SocialPostSubmitRq();
+        rq.setAccountRef("dealer-1");
         rq.setPlatform(SocialPlatform.INSTAGRAM);
         rq.setPostType(SocialPostType.PHOTO);
         rq.setInventoryRef("42");
@@ -93,7 +94,7 @@ class SocialPostServiceTest {
 
     @Test
     void submitPhoto_createsContainerAndPersistsPublishingPost() {
-        when(accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM))
+        when(accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM))
                 .thenReturn(Optional.of(account));
         when(socialPublishClient.createPhotoContainer(eq(account), anyString(), anyString())).thenReturn("container-1");
 
@@ -109,7 +110,7 @@ class SocialPostServiceTest {
 
     @Test
     void submitPhoto_rejectsWhenNoAccountConfigured() {
-        when(accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM))
+        when(accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.submitPhoto(client, photoRequest()))
@@ -119,11 +120,12 @@ class SocialPostServiceTest {
 
     @Test
     void submitVideo_submitsOneVideoGenJobPerPhoto() {
-        when(accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM))
+        when(accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM))
                 .thenReturn(Optional.of(account));
         when(videoGenClient.submit(anyString(), anyString())).thenReturn("job-a", "job-b");
 
         SocialPostSubmitRq rq = new SocialPostSubmitRq();
+        rq.setAccountRef("dealer-1");
         rq.setPlatform(SocialPlatform.INSTAGRAM);
         rq.setPostType(SocialPostType.VIDEO);
         rq.setInventoryRef("42");
@@ -234,12 +236,13 @@ class SocialPostServiceTest {
     void approve_createsVideoContainerAndMovesToPublishing() {
         SocialPost post = new SocialPost();
         post.setId(100L);
+        post.setAccountRef("dealer-1");
         post.setStatus(SocialPostStatus.VIDEO_READY_FOR_REVIEW);
         post.setPlatform(SocialPlatform.INSTAGRAM);
         post.setGeneratedVideoObjectKey("videos/100/final.mp4");
         post.setCallbackUrl("https://garage.example.com/webhook");
         when(postRepository.findByIdAndSocialClientId(100L, 1L)).thenReturn(Optional.of(post));
-        when(accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM)).thenReturn(Optional.of(account));
+        when(accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM)).thenReturn(Optional.of(account));
         when(objectStorageService.presignedUrl("videos/100/final.mp4", 15 * 60)).thenReturn("https://minio.example.com/final.mp4?sig=x");
         when(socialPublishClient.createVideoContainer(account, "https://minio.example.com/final.mp4?sig=x", null)).thenReturn("container-2");
 
@@ -255,12 +258,13 @@ class SocialPostServiceTest {
         SocialPost post = new SocialPost();
         post.setId(100L);
         post.setSocialClientId(1L);
+        post.setAccountRef("dealer-1");
         post.setPlatform(SocialPlatform.INSTAGRAM);
         post.setMediaContainerId("container-1");
         post.setStatus(SocialPostStatus.PUBLISHING);
         when(postRepository.findByStatusIn(List.of(SocialPostStatus.PUBLISHING))).thenReturn(List.of(post));
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM)).thenReturn(Optional.of(account));
+        when(accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM)).thenReturn(Optional.of(account));
         when(socialPublishClient.pollContainer(account, "container-1")).thenReturn(SocialPublishClient.ContainerStatus.FINISHED);
         when(socialPublishClient.publish(account, "container-1")).thenReturn("ig-media-1");
 
@@ -276,13 +280,14 @@ class SocialPostServiceTest {
         SocialPost post = new SocialPost();
         post.setId(100L);
         post.setSocialClientId(1L);
+        post.setAccountRef("dealer-1");
         post.setPlatform(SocialPlatform.INSTAGRAM);
         post.setMediaContainerId("container-1");
         post.setStatus(SocialPostStatus.PUBLISHING);
         post.setContainerPollAttempts(9); // one short of the 10-attempt cap
         when(postRepository.findByStatusIn(List.of(SocialPostStatus.PUBLISHING))).thenReturn(List.of(post));
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM)).thenReturn(Optional.of(account));
+        when(accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM)).thenReturn(Optional.of(account));
         when(socialPublishClient.pollContainer(account, "container-1")).thenReturn(SocialPublishClient.ContainerStatus.IN_PROGRESS);
 
         service.advancePublishing();

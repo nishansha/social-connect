@@ -22,6 +22,9 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_URLS = {
             "/oauth/token",
+            // Meta redirects the admin's own browser here after the Facebook consent dialog — it
+            // can't carry our service-to-service Bearer token. Correlated by the state param alone.
+            "/v1/accounts/oauth/callback",
             "/actuator/health/**"
     };
 

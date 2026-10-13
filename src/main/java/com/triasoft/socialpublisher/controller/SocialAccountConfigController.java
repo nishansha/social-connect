@@ -21,8 +21,10 @@ public class SocialAccountConfigController {
     private final SocialAccountConfigService service;
 
     @GetMapping
-    public ResponseEntity<List<SocialAccountConfigRs>> list(@AuthenticationPrincipal SocialClient client) {
-        return ResponseEntity.ok(service.list(client));
+    public ResponseEntity<List<SocialAccountConfigRs>> list(
+            @AuthenticationPrincipal SocialClient client,
+            @RequestParam(required = false) String accountRef) {
+        return ResponseEntity.ok(service.list(client, accountRef));
     }
 
     @PostMapping

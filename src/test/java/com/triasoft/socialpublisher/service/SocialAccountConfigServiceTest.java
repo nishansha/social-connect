@@ -48,10 +48,12 @@ class SocialAccountConfigServiceTest {
 
     @Test
     void create_encryptsTokenAndNeverExposesItInResponse() {
-        when(repository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM)).thenReturn(Optional.empty());
+        when(repository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM))
+                .thenReturn(Optional.empty());
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         SocialAccountConfigRq rq = new SocialAccountConfigRq();
+        rq.setAccountRef("dealer-1");
         rq.setPlatform(SocialPlatform.INSTAGRAM);
         rq.setIgBusinessAccountId("ig-biz-1");
         rq.setPageAccessToken("EAAG-plaintext-page-token");
@@ -68,11 +70,12 @@ class SocialAccountConfigServiceTest {
     }
 
     @Test
-    void create_rejectsDuplicateActivePlatformConfig() {
-        when(repository.findBySocialClientIdAndPlatformAndActiveTrue(1L, SocialPlatform.INSTAGRAM))
+    void create_rejectsDuplicateActivePlatformConfigForSameTenant() {
+        when(repository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(1L, "dealer-1", SocialPlatform.INSTAGRAM))
                 .thenReturn(Optional.of(new SocialAccountConfig()));
 
         SocialAccountConfigRq rq = new SocialAccountConfigRq();
+        rq.setAccountRef("dealer-1");
         rq.setPlatform(SocialPlatform.INSTAGRAM);
 
         assertThatThrownBy(() -> service.create(client, rq)).isInstanceOf(ApiException.class);

@@ -38,6 +38,12 @@ public class ReplicateVideoGenClient implements VideoGenClient {
 
     @Override
     public String submit(String imageUrl, String prompt) {
+        if (properties.model() == null || properties.model().isBlank()) {
+            // Fails loudly instead of silently building a malformed "/models//predictions" URL,
+            // which Replicate 301-redirects — WebClient doesn't follow redirects by default, so
+            // that surfaces as a confusing "no id" error instead of this actionable one.
+            throw ApiException.badRequest("app.video-gen.model is not configured");
+        }
         Map<String, Object> response = webClient.post()
                 .uri("/models/{model}/predictions", properties.model())
                 .bodyValue(Map.of("input", buildInput(imageUrl, prompt)))

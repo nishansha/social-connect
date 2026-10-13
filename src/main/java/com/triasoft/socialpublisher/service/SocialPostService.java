@@ -60,6 +60,7 @@ public class SocialPostService {
 
         SocialPost post = new SocialPost();
         post.setSocialClientId(client.getId());
+        post.setAccountRef(request.getAccountRef());
         post.setInventoryRef(request.getInventoryRef());
         post.setPlatform(request.getPlatform());
         post.setPostType(SocialPostType.PHOTO);
@@ -83,6 +84,7 @@ public class SocialPostService {
 
         SocialPost post = new SocialPost();
         post.setSocialClientId(client.getId());
+        post.setAccountRef(request.getAccountRef());
         post.setInventoryRef(request.getInventoryRef());
         post.setPlatform(request.getPlatform());
         post.setPostType(SocialPostType.VIDEO);
@@ -115,7 +117,7 @@ public class SocialPostService {
         if (post.getStatus() != SocialPostStatus.VIDEO_READY_FOR_REVIEW) {
             throw ApiException.conflict("Post is not awaiting approval (status=" + post.getStatus() + ")");
         }
-        SocialAccountConfig account = requireActiveAccount(client, post.getPlatform());
+        SocialAccountConfig account = requireActiveAccount(client, post.getAccountRef(), post.getPlatform());
 
         String videoUrl = objectStorageService.presignedUrl(post.getGeneratedVideoObjectKey(), VIDEO_PRESIGNED_URL_TTL_SECONDS);
         String containerId = socialPublishClient.createVideoContainer(account, videoUrl, post.getCaption());
@@ -201,7 +203,7 @@ public class SocialPostService {
             if (post.getMediaContainerId() == null) {
                 continue; // VIDEO post approved but container not yet created — shouldn't normally happen, skip defensively
             }
-            SocialAccountConfig account = requireActiveAccount(findClient(post), post.getPlatform());
+            SocialAccountConfig account = requireActiveAccount(findClient(post), post.getAccountRef(), post.getPlatform());
             SocialPublishClient.ContainerStatus status = socialPublishClient.pollContainer(account, post.getMediaContainerId());
             post.setContainerPollAttempts(post.getContainerPollAttempts() + 1);
 
@@ -254,13 +256,12 @@ public class SocialPostService {
     }
 
     private SocialAccountConfig loadActiveAccount(SocialClient client, SocialPostSubmitRq request) {
-        return accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(client.getId(), request.getPlatform())
-                .orElseThrow(() -> ApiException.notFound("No active " + request.getPlatform() + " account configured for this client"));
+        return requireActiveAccount(client, request.getAccountRef(), request.getPlatform());
     }
 
-    private SocialAccountConfig requireActiveAccount(SocialClient client, SocialPlatform platform) {
-        return accountConfigRepository.findBySocialClientIdAndPlatformAndActiveTrue(client.getId(), platform)
-                .orElseThrow(() -> ApiException.notFound("No active " + platform + " account configured for this client"));
+    private SocialAccountConfig requireActiveAccount(SocialClient client, String accountRef, SocialPlatform platform) {
+        return accountConfigRepository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(client.getId(), accountRef, platform)
+                .orElseThrow(() -> ApiException.notFound("No active " + platform + " account configured for accountRef=" + accountRef));
     }
 
     private SocialPost loadOwnedPost(SocialClient client, Long postId) {

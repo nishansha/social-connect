@@ -10,5 +10,8 @@ import java.util.Optional;
 public interface SocialAccountConfigRepository extends JpaRepository<SocialAccountConfig, Long> {
     List<SocialAccountConfig> findBySocialClientId(Long socialClientId);
 
-    Optional<SocialAccountConfig> findBySocialClientIdAndPlatformAndActiveTrue(Long socialClientId, SocialPlatform platform);
+    List<SocialAccountConfig> findBySocialClientIdAndAccountRef(Long socialClientId, String accountRef);
+
+    Optional<SocialAccountConfig> findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(
+            Long socialClientId, String accountRef, SocialPlatform platform);
 }

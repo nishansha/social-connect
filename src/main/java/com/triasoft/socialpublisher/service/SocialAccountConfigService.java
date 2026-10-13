@@ -21,21 +21,24 @@ public class SocialAccountConfigService {
     private final SocialAccountConfigRepository repository;
     private final TokenCipher tokenCipher;
 
-    public List<SocialAccountConfigRs> list(SocialClient client) {
-        return repository.findBySocialClientId(client.getId()).stream()
-                .map(SocialAccountConfigRs::from)
-                .toList();
+    public List<SocialAccountConfigRs> list(SocialClient client, String accountRef) {
+        List<SocialAccountConfig> configs = accountRef != null
+                ? repository.findBySocialClientIdAndAccountRef(client.getId(), accountRef)
+                : repository.findBySocialClientId(client.getId());
+        return configs.stream().map(SocialAccountConfigRs::from).toList();
     }
 
     @Transactional
     public SocialAccountConfigRs create(SocialClient client, SocialAccountConfigRq request) {
-        repository.findBySocialClientIdAndPlatformAndActiveTrue(client.getId(), request.getPlatform())
+        repository.findBySocialClientIdAndAccountRefAndPlatformAndActiveTrue(
+                        client.getId(), request.getAccountRef(), request.getPlatform())
                 .ifPresent(existing -> {
-                    throw ApiException.conflict("An active " + request.getPlatform() + " account is already configured — update it instead");
+                    throw ApiException.conflict("An active " + request.getPlatform() + " account is already configured for this tenant — update it instead");
                 });
 
         SocialAccountConfig config = new SocialAccountConfig();
         config.setSocialClientId(client.getId());
+        config.setAccountRef(request.getAccountRef());
         applyRequest(config, request);
         return SocialAccountConfigRs.from(repository.save(config));
     }

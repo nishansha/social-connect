@@ -20,6 +20,7 @@ app:
     app-id: ${META_APP_ID}
     app-secret: ${META_APP_SECRET}
     graph-api-version: ${META_GRAPH_API_VERSION:v21.0}
+    oauth-redirect-base-url: ${META_OAUTH_REDIRECT_BASE_URL}
   video-gen:
     provider: ${VIDEO_GEN_PROVIDER:replicate}
     api-key: ${VIDEO_GEN_API_KEY}

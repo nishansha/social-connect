@@ -1,5 +1,6 @@
 package com.triasoft.socialpublisher.scheduler;
 
+import com.triasoft.socialpublisher.service.MetaOAuthService;
 import com.triasoft.socialpublisher.service.SocialPostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +19,19 @@ import org.springframework.stereotype.Component;
 public class SocialJobPoller {
 
     private final SocialPostService socialPostService;
+    private final MetaOAuthService metaOAuthService;
 
     @Scheduled(fixedDelay = 15_000, initialDelay = 5_000)
     public void pollVideoGenJobs() {
         runSafely("advanceVideoGenJobs", socialPostService::advanceVideoGenJobs);
+    }
+
+    // Low-urgency cleanup, not a job in the posting pipeline — abandoned "Connect" handshakes
+    // (admin closed the Page-picker without choosing) otherwise sit forever holding an encrypted
+    // long-lived user token with nothing else sweeping them.
+    @Scheduled(fixedDelay = 600_000, initialDelay = 30_000)
+    public void sweepExpiredOAuthConnections() {
+        runSafely("sweepExpiredConnections", metaOAuthService::sweepExpiredConnections);
     }
 
     @Scheduled(fixedDelay = 15_000, initialDelay = 7_000)

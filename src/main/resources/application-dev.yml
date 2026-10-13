@@ -9,7 +9,7 @@ app:
   jwt:
     secret: "dev-only-not-a-real-secret-base64-encoded-0000000000"
   encryption:
-    key: "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU=" # dev-only 32-byte key, base64
+    key: "6DTFxjPhqCuT2Lho8ZAnSdtl0wG7E+s984PktlG0kjk=" # dev-only 32-byte key, base64 (openssl rand -base64 32)
   storage:
     minio:
       endpoint: http://localhost:9000
@@ -18,10 +18,16 @@ app:
       secret-key: minioadmin
       bucket: social-publisher
   meta:
-    app-id: ""
-    app-secret: ""
+    app-id: ${META_APP_ID:}
+    app-secret: ${META_APP_SECRET:}
     graph-api-version: v21.0
+    # Must exactly match a "Valid OAuth Redirect URI" on the Meta App — this service's own public
+    # URL, not garage-api's. Local testing needs a second ngrok tunnel for this port (8090),
+    # re-registered on the Meta App's redirect-URI allow-list every time the tunnel URL changes.
+    # Current tunnel as of 2026-10-13 (free tier — changes if ngrok restarts).
+    oauth-redirect-base-url: ${META_OAUTH_REDIRECT_BASE_URL:https://dedd-2409-40f3-b0-6078-b0e1-4409-65e2-1ef3.ngrok-free.app}
   video-gen:
     provider: replicate
-    api-key: ""
-    model: ""
+    # Read from env, never committed — export VIDEO_GEN_API_KEY before `mvn spring-boot:run`.
+    api-key: ${VIDEO_GEN_API_KEY:}
+    model: ${VIDEO_GEN_MODEL:}

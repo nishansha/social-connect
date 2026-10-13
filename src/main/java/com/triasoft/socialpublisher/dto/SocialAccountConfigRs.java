@@ -12,6 +12,7 @@ import java.time.Instant;
 @Builder
 public class SocialAccountConfigRs {
     private Long id;
+    private String accountRef;
     private SocialPlatform platform;
     private String igBusinessAccountId;
     private String facebookPageId;
@@ -22,6 +23,7 @@ public class SocialAccountConfigRs {
     public static SocialAccountConfigRs from(SocialAccountConfig config) {
         return SocialAccountConfigRs.builder()
                 .id(config.getId())
+                .accountRef(config.getAccountRef())
                 .platform(config.getPlatform())
                 .igBusinessAccountId(config.getIgBusinessAccountId())
                 .facebookPageId(config.getFacebookPageId())
