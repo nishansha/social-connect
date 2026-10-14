@@ -5,6 +5,9 @@ public interface ObjectStorageService {
     /** Downloads the bytes at a (possibly external, e.g. Replicate's delivery host) URL and stores them under this service's own bucket; returns the stored object key. */
     String storeFromUrl(String sourceUrl, String objectKeyPrefix);
 
+    /** Downloads the raw bytes at a (possibly external) URL without storing them — e.g. pulling a source photo in before generating a clip from it. */
+    byte[] downloadFromUrl(String sourceUrl);
+
     /** Stores raw bytes already in hand (e.g. a locally-produced ffmpeg output) under this service's own bucket; returns the stored object key. */
     String store(byte[] content, String objectKeyPrefix, String extension, String contentType);
 

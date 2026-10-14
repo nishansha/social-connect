@@ -7,8 +7,13 @@ package com.triasoft.socialpublisher.client;
  */
 public interface VideoGenClient {
 
-    /** Submits one image + prompt, returns the provider's job id. */
-    String submit(String imageUrl, String prompt);
+    /**
+     * Submits one image + prompt, returns the provider's job id. {@code orientation} is decided
+     * once per post (from the first source photo) by the caller and applied to every clip in that
+     * post — see {@code SocialPostService.submitVideo} — so all clips share one resolution, which
+     * {@code FfmpegVideoStitchService}'s stream-copy concat requires.
+     */
+    String submit(String imageUrl, String prompt, VideoOrientation orientation);
 
     VideoGenStatus poll(String jobId);
 
@@ -19,5 +24,11 @@ public interface VideoGenClient {
         RUNNING,
         SUCCEEDED,
         FAILED
+    }
+
+    /** Provider-agnostic — {@code ReplicateVideoGenClient} maps this to Replicate's own aspect_ratio string. */
+    enum VideoOrientation {
+        LANDSCAPE,
+        PORTRAIT
     }
 }

@@ -13,7 +13,13 @@ app:
   storage:
     minio:
       endpoint: http://localhost:9000
-      public-endpoint: http://localhost:9000
+      # Only resolvable from this machine. Presigned URLs minted against this default are handed
+      # to Meta's own servers (createVideoContainer's video_url) to fetch — Meta trying to resolve
+      # "localhost" obviously can't reach this machine, so the fetch fails before it's ever a real
+      # network request (nothing to see in ngrok's own request log, since it never arrives). Point
+      # this at the same tunnel garage-api uses for its MinIO bucket (same local MinIO server,
+      # just a different bucket) when testing the video-post path locally.
+      public-endpoint: ${MINIO_PUBLIC_ENDPOINT:https://1b87-2409-40f3-103-bdc2-187b-bd24-984f-ef57.ngrok-free.app}
       access-key: minioadmin
       secret-key: minioadmin
       bucket: social-publisher
@@ -25,7 +31,7 @@ app:
     # URL, not garage-api's. Local testing needs a second ngrok tunnel for this port (8090),
     # re-registered on the Meta App's redirect-URI allow-list every time the tunnel URL changes.
     # Current tunnel as of 2026-10-13 (free tier — changes if ngrok restarts).
-    oauth-redirect-base-url: ${META_OAUTH_REDIRECT_BASE_URL:https://dedd-2409-40f3-b0-6078-b0e1-4409-65e2-1ef3.ngrok-free.app}
+    oauth-redirect-base-url: ${META_OAUTH_REDIRECT_BASE_URL:https://c0be-2409-40f3-103-bdc2-187b-bd24-984f-ef57.ngrok-free.app}
   video-gen:
     provider: replicate
     # Read from env, never committed — export VIDEO_GEN_API_KEY before `mvn spring-boot:run`.

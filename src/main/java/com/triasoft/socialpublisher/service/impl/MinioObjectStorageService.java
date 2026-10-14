@@ -53,15 +53,26 @@ public class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public String storeFromUrl(String sourceUrl, String objectKeyPrefix) {
+        return store(downloadFromUrl(sourceUrl), objectKeyPrefix, ".mp4", "video/mp4");
+    }
+
+    @Override
+    public byte[] downloadFromUrl(String sourceUrl) {
+        // .uri(URI), not .uri(String): a presigned URL arrives already percent-encoded (MinIO's
+        // AWS4-HMAC-SHA256 credential scope always contains literal "/" as "%2F"). WebClient's
+        // .uri(String) overload parses the string through DefaultUriBuilderFactory, which
+        // RE-ENCODES it — "%2F" becomes "%252F" — corrupting the signature and making MinIO
+        // reject every single request with a generic AccessDenied, not just expired ones. Passing
+        // a pre-built URI bypasses that re-encoding pipeline entirely.
         byte[] content = plainWebClient.get()
-                .uri(sourceUrl)
+                .uri(java.net.URI.create(sourceUrl))
                 .retrieve()
                 .bodyToMono(byte[].class)
                 .block();
         if (content == null) {
             throw ApiException.badRequest("Downloaded empty content from " + sourceUrl);
         }
-        return store(content, objectKeyPrefix, ".mp4", "video/mp4");
+        return content;
     }
 
     @Override

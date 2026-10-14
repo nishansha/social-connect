@@ -13,6 +13,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,13 +36,42 @@ public class InstagramGraphClient implements SocialPublishClient {
     }
 
     @Override
-    public String createPhotoContainer(SocialAccountConfig account, String imageUrl, String caption) {
-        MultiValueMap<String, String> form = baseForm(account);
-        form.add("image_url", imageUrl);
-        if (caption != null) {
-            form.add("caption", caption);
+    public String createPhotoContainer(SocialAccountConfig account, List<String> imageUrls, String caption) {
+        if (imageUrls.size() == 1) {
+            MultiValueMap<String, String> form = baseForm(account);
+            form.add("image_url", imageUrls.get(0));
+            if (caption != null) {
+                form.add("caption", caption);
+            }
+            return post("/" + account.getIgBusinessAccountId() + "/media", form, "Failed to create photo media container");
         }
-        return post("/" + account.getIgBusinessAccountId() + "/media", form, "Failed to create photo media container");
+        return createCarouselContainer(account, imageUrls, caption);
+    }
+
+    /**
+     * Instagram's carousel shape: each image becomes its own "carousel item" container (no
+     * caption — the caption lives on the parent only), then a {@code media_type=CAROUSEL} parent
+     * container references them by id. The parent is what gets polled/published afterward —
+     * {@link #pollContainer}/{@link #publish} are unchanged, they already just take a container id
+     * with no awareness of whether it's a single photo, a carousel, or (eventually) a video.
+     */
+    private String createCarouselContainer(SocialAccountConfig account, List<String> imageUrls, String caption) {
+        List<String> childIds = imageUrls.stream()
+                .map(imageUrl -> {
+                    MultiValueMap<String, String> itemForm = baseForm(account);
+                    itemForm.add("image_url", imageUrl);
+                    itemForm.add("is_carousel_item", "true");
+                    return post("/" + account.getIgBusinessAccountId() + "/media", itemForm, "Failed to create carousel item container");
+                })
+                .toList();
+
+        MultiValueMap<String, String> carouselForm = baseForm(account);
+        carouselForm.add("media_type", "CAROUSEL");
+        carouselForm.add("children", String.join(",", childIds));
+        if (caption != null) {
+            carouselForm.add("caption", caption);
+        }
+        return post("/" + account.getIgBusinessAccountId() + "/media", carouselForm, "Failed to create carousel media container");
     }
 
     @Override
@@ -56,22 +86,27 @@ public class InstagramGraphClient implements SocialPublishClient {
     }
 
     @Override
-    public ContainerStatus pollContainer(SocialAccountConfig account, String containerId) {
+    public ContainerPollResult pollContainer(SocialAccountConfig account, String containerId) {
+        // "status" (not just "status_code") is Meta's own human-readable rejection reason —
+        // e.g. why a generated video failed Reels' asset requirements. Without it, every
+        // container-processing failure looks identical ("entered ERROR") regardless of cause.
         Map<String, Object> response = webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/" + containerId)
-                        .queryParam("fields", "status_code")
+                        .queryParam("fields", "status_code,status")
                         .queryParam("access_token", decryptedToken(account))
                         .build())
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
         String statusCode = response == null ? null : String.valueOf(response.get("status_code"));
-        return switch (statusCode == null ? "" : statusCode) {
+        String detail = response == null ? null : (String) response.get("status");
+        ContainerStatus status = switch (statusCode == null ? "" : statusCode) {
             case "FINISHED" -> ContainerStatus.FINISHED;
             case "ERROR" -> ContainerStatus.ERROR;
             case "EXPIRED" -> ContainerStatus.EXPIRED;
             default -> ContainerStatus.IN_PROGRESS;
         };
+        return new ContainerPollResult(status, detail);
     }
 
     @Override

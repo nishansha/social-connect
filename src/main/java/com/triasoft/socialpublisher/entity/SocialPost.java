@@ -1,5 +1,6 @@
 package com.triasoft.socialpublisher.entity;
 
+import com.triasoft.socialpublisher.client.VideoGenClient;
 import com.triasoft.socialpublisher.enums.SocialFailureStage;
 import com.triasoft.socialpublisher.enums.SocialPlatform;
 import com.triasoft.socialpublisher.enums.SocialPostStatus;
@@ -59,8 +60,13 @@ public class SocialPost extends BaseEntity {
     @Column(name = "photo_url", length = 2000)
     private List<String> sourcePhotoUrls = new ArrayList<>();
 
-    @Column(name = "prompt", length = 1000)
+    @Column(name = "prompt", columnDefinition = "text")
     private String prompt;
+
+    /** Decided once from the first source photo (see SocialPostService.detectOrientation); persisted because advanceClip needs it again later, off the request thread. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "orientation", length = 20)
+    private VideoGenClient.VideoOrientation orientation;
 
     @Column(name = "caption", length = 2000)
     private String caption;
