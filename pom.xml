@@ -9,9 +9,9 @@
         <relativePath/>
     </parent>
     <groupId>com.triasoft</groupId>
-    <artifactId>social-publisher</artifactId>
+    <artifactId>social-connect</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>social-publisher</name>
+    <name>social-connect</name>
     <description>Standalone Meta (Instagram/Facebook) posting + AI image-to-video generation service</description>
 
     <properties>
